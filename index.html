@@ -5,127 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            /* הצבעים שביקשת */
             --segment-bg: #bcbfff; 
             --number-color: #e8ff6a; 
-            --label-color: #333333; /* צבע כהה לכיתוב שיהיה קריא על הרקע הבהיר */
+            --label-color: #333333;
             --warning-color: #ff4444;
         }
 
         html, body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: transparent !important;
-            height: 100%;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            font-family: system-ui, -apple-system, sans-serif;
+            height: 100%; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; font-family: system-ui, -apple-system, sans-serif;
         }
 
         .wrapper {
             position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px 40px; /* רווח מוגדל כדי שגלגל השיניים לא יכוסה */
+            display: flex; justify-content: center; align-items: center;
+            padding: 20px 40px;
         }
 
         .countdown-container {
-            display: flex;
-            gap: 15px;
-            direction: ltr; /* דקות משמאל, שניות מימין */
-            align-items: center;
+            display: flex; gap: 15px;
+            direction: ltr; align-items: center;
+            cursor: pointer;
         }
 
         .time-segment {
             background-color: var(--segment-bg);
-            padding: 15px;
-            border-radius: 12px;
-            min-width: 90px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 15px; border-radius: 12px;
+            min-width: 90px; display: flex;
+            flex-direction: column; align-items: center;
+            justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .number {
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: var(--number-color);
-            line-height: 1;
-            margin: 0;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* צל קטן להבלטה */
+            font-size: 3.5rem; font-weight: 900;
+            color: var(--number-color); line-height: 1;
+            margin: 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
-        .label {
-            font-size: 0.85rem;
-            color: var(--label-color);
-            font-weight: bold;
-            margin-top: 5px;
-        }
+        .label { font-size: 0.85rem; color: var(--label-color); font-weight: bold; margin-top: 5px; }
 
-        /* כפתור הגדרות - ממוקם מחוץ למסגרת הספרות */
-        .settings-btn {
-            position: absolute;
-            top: 10px;
-            right: 5px;
-            background: none;
-            border: none;
-            color: #333;
-            cursor: pointer;
-            font-size: 1.3rem;
-            opacity: 0.4;
-            transition: opacity 0.3s;
-            z-index: 10;
-        }
-        .settings-btn:hover { opacity: 1; }
-
-        /* פאנל הגדרות */
-        #config-panel {
-            display: none;
-            position: absolute;
-            background: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 100;
-            color: #333;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
-            width: 170px;
-            text-align: center;
-            border: 1px solid #ccc;
-        }
-
-        input {
-            width: 80%;
-            margin: 5px 0 10px;
-            padding: 5px;
-            text-align: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .save-btn {
-            background: #333;
-            color: white;
-            border: none;
-            padding: 8px;
-            width: 100%;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        /* התראה */
-        .warning .number {
+        /* מצב הבהוב */
+        .flashing .number {
             animation: pulse-warn 1s infinite;
         }
+
         @keyframes pulse-warn {
-            50% { color: var(--warning-color); }
+            50% { color: var(--warning-color); transform: scale(1.05); }
         }
+
+        .settings-btn {
+            position: absolute; top: 10px; right: 5px;
+            background: none; border: none; color: #333;
+            cursor: pointer; font-size: 1.3rem; opacity: 0.2;
+        }
+
+        #config-panel {
+            display: none; position: absolute; background: #fff;
+            padding: 15px; border-radius: 10px; z-index: 100;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3); width: 170px; text-align: center;
+        }
+
+        input { width: 80%; margin: 5px 0; padding: 5px; text-align: center; }
+        .save-btn { background: #333; color: white; border: none; padding: 8px; width: 100%; cursor: pointer; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -135,23 +79,14 @@
 
 <div class="wrapper">
     <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
-    
     <div class="countdown-container" id="timerDisplay" onclick="toggleSettings()">
-        <div class="time-segment">
-            <span class="number" id="minutes">00</span>
-            <span class="label">דקות</span>
-        </div>
-        <div class="time-segment">
-            <span class="number" id="seconds">00</span>
-            <span class="label">שניות</span>
-        </div>
+        <div class="time-segment"><span class="number" id="minutes">00</span><span class="label">דקות</span></div>
+        <div class="time-segment"><span class="number" id="seconds">00</span><span class="label">שניות</span></div>
     </div>
 
     <div id="config-panel">
-        <label>דקות:</label><br>
-        <input type="number" id="minInput" value="10"><br>
-        <label>התראה (שניות):</label><br>
-        <input type="number" id="warnInput" value="60">
+        <label>דקות:</label><input type="number" id="minInput" value="10">
+        <label>התראה (שניות):</label><input type="number" id="warnInput" value="60">
         <button class="save-btn" onclick="startTimer()">הפעל</button>
     </div>
 </div>
@@ -172,7 +107,7 @@
         warnTime = document.getElementById('warnInput').value;
         timeLeft = mins * 60;
         warnPlayed = false;
-        document.getElementById('timerDisplay').classList.remove('warning');
+        document.getElementById('timerDisplay').classList.remove('flashing');
         clearInterval(timerInterval);
         timerInterval = setInterval(update, 1000);
         toggleSettings();
@@ -183,23 +118,35 @@
         if (timeLeft <= 0) {
             document.getElementById("minutes").innerText = "00";
             document.getElementById("seconds").innerText = "00";
+            
+            // הפעלת הבהוב סיום
+            const display = document.getElementById('timerDisplay');
+            display.classList.add('flashing');
             document.getElementById("endSound").play().catch(()=>{});
+            
             clearInterval(timerInterval);
+
+            // כיבוי ההבהוב אחרי 30 שניות
+            setTimeout(() => {
+                display.classList.remove('flashing');
+            }, 30000); 
+            
             return;
         }
 
-        if (timeLeft <= warnTime && !warnPlayed) {
-            document.getElementById('timerDisplay').classList.add('warning');
-            document.getElementById("warnBeep").play().catch(()=>{});
-            warnPlayed = true;
+        // התראה מוקדמת (ביפ והבהוב)
+        if (timeLeft <= warnTime) {
+            document.getElementById('timerDisplay').classList.add('flashing');
+            if (!warnPlayed) {
+                document.getElementById("warnBeep").play().catch(()=>{});
+                warnPlayed = true;
+            }
         }
 
         const m = Math.floor(timeLeft / 60);
         const s = timeLeft % 60;
-
         document.getElementById("minutes").innerText = String(m).padStart(2, '0');
         document.getElementById("seconds").innerText = String(s).padStart(2, '0');
-        
         timeLeft--;
     }
 
