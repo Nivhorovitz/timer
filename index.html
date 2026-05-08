@@ -4,92 +4,157 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: transparent; /* שקיפות לרקע */
+        :root {
+            --accent-color: #00ff88; 
+            --warning-color: #ffcc00;
+            --bg-segment: rgba(0, 0, 0, 0.7);
+            --text-color: #ffffff;
         }
 
+        body {
+            margin: 0; padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; background-color: transparent; overflow: hidden;
+            color: var(--text-color);
+        }
+
+        .wrapper { position: relative; padding: 20px; text-align: center; }
+
         .countdown-container {
-            display: flex;
-            gap: 15px;
-            text-align: center;
+            display: flex; gap: 15px; cursor: pointer; justify-content: center;
         }
 
         .time-segment {
-            background: #333;
-            color: #fff;
-            padding: 10px;
-            border-radius: 8px;
-            min-width: 60px;
+            background: var(--bg-segment);
+            padding: 20px; border-radius: 15px;
+            min-width: 90px; backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .number {
-            font-size: 2rem;
-            font-weight: bold;
-            display: block;
+            font-size: 3.5rem; font-weight: 900; display: block;
+            color: var(--accent-color);
+            text-shadow: 0 0 15px var(--accent-color);
         }
 
-        .label {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            opacity: 0.8;
+        /* מצב התראה (זמן עומד להיגמר) */
+        .warning .number {
+            color: var(--warning-color);
+            text-shadow: 0 0 15px var(--warning-color);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0.7; } }
+
+        .label { font-size: 0.9rem; opacity: 0.8; margin-top: 5px; display: block; }
+
+        /* פאנל הגדרות */
+        #config-panel {
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: #1a1a1a;
+            padding: 20px; border-radius: 12px; z-index: 100;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8); width: 220px;
+        }
+
+        input {
+            width: 80%; padding: 8px; margin: 10px 0;
+            border-radius: 5px; border: 1px solid #444; background: #333; color: white;
+            text-align: center;
+        }
+
+        .save-btn {
+            background: var(--accent-color); border: none; padding: 10px 20px;
+            border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;
+        }
+
+        .settings-btn {
+            position: absolute; top: -10px; right: -10px; background: none;
+            border: none; color: white; cursor: pointer; font-size: 1.2rem; opacity: 0.4;
         }
     </style>
 </head>
 <body>
 
-<div class="countdown-container">
-    <div class="time-segment">
-        <span class="number" id="days">00</span>
-        <span class="label">ימים</span>
+<audio id="endSound"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg"></audio>
+<audio id="warnSound"><source src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" type="audio/mpeg"></audio>
+
+<div class="wrapper">
+    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+    
+    <div class="countdown-container" id="timerDisplay" onclick="toggleSettings()">
+        <div class="time-segment"><span class="number" id="minutes">00</span><span class="label">דקות</span></div>
+        <div class="time-segment"><span class="number" id="seconds">00</span><span class="label">שניות</span></div>
     </div>
-    <div class="time-segment">
-        <span class="number" id="hours">00</span>
-        <span class="label">שעות</span>
-    </div>
-    <div class="time-segment">
-        <span class="number" id="minutes">00</span>
-        <span class="label">דקות</span>
-    </div>
-    <div class="time-segment">
-        <span class="number" id="seconds">00</span>
-        <span class="label">שניות</span>
+
+    <div id="config-panel">
+        <label>כמה דקות לספור?</label>
+        <input type="number" id="minInput" value="10" min="1">
+        <label>התראה מוקדמת (שניות לסיום):</label>
+        <input type="number" id="warnInput" value="60">
+        <button class="save-btn" onclick="startTimer()">התחל מחדש</button>
     </div>
 </div>
 
 <script>
-    // הגדר את התאריך ליעד כאן (פורמט: שנה-חודש-יום שעה:דקה:שנייה)
-    const targetDate = new Date("Dec 31, 2026 23:59:59").getTime();
+    let timeLeft; // בשניות
+    let warnTime; 
+    let timerInterval;
+    let endPlayed = false;
+    let warnPlayed = false;
 
-    function updateTimer() {
-        const now = new Date().getTime();
-        const diff = targetDate - now;
+    function toggleSettings() {
+        const panel = document.getElementById('config-panel');
+        panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+    }
 
-        if (diff <= 0) {
-            document.querySelector(".countdown-container").innerHTML = "<h3>המבצע הסתיים!</h3>";
+    function startTimer() {
+        const mins = document.getElementById('minInput').value;
+        warnTime = document.getElementById('warnInput').value;
+        
+        timeLeft = mins * 60;
+        endPlayed = false;
+        warnPlayed = false;
+        
+        document.getElementById('timerDisplay').classList.remove('warning');
+        
+        clearInterval(timerInterval);
+        timerInterval = setInterval(update, 1000);
+        toggleSettings();
+        update();
+    }
+
+    function update() {
+        if (timeLeft <= 0) {
+            document.getElementById("minutes").innerText = "00";
+            document.getElementById("seconds").innerText = "00";
+            if (!endPlayed) {
+                document.getElementById("endSound").play().catch(()=>{});
+                endPlayed = true;
+            }
+            clearInterval(timerInterval);
             return;
         }
 
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        // בדיקת התראה מוקדמת
+        if (timeLeft <= warnTime && !warnPlayed) {
+            document.getElementById('timerDisplay').classList.add('warning');
+            document.getElementById("warnSound").play().catch(()=>{});
+            warnPlayed = true;
+        }
 
-        document.getElementById("days").innerText = d.toString().padStart(2, '0');
-        document.getElementById("hours").innerText = h.toString().padStart(2, '0');
-        document.getElementById("minutes").innerText = m.toString().padStart(2, '0');
-        document.getElementById("seconds").innerText = s.toString().padStart(2, '0');
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+
+        document.getElementById("minutes").innerText = String(m).padStart(2, '0');
+        document.getElementById("seconds").innerText = String(s).padStart(2, '0');
+        
+        timeLeft--;
     }
 
-    setInterval(updateTimer, 1000);
-    updateTimer();
+    // הפעלה ראשונית של 10 דקות כברירת מחדל
+    timeLeft = 600;
+    timerInterval = setInterval(update, 1000);
 </script>
-
 </body>
 </html>
