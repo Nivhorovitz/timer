@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TheLink Passport</title>
+  <style>
+    :root {
+      --purple: #bcbfff;
+      --lime: #e8ff6a;
+      --dark: #101214;
+      --white-soft: rgba(255, 255, 255, 0.10);
+      --white-border: rgba(255, 255, 255, 0.16);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--dark);
+      color: white;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .page {
+      position: relative;
+      min-height: 100vh;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .glow-a, .glow-b {
+      position: fixed;
+      width: 440px;
+      height: 440px;
+      border-radius: 999px;
+      filter: blur(70px);
+      opacity: 0.28;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-a {
+      top: -180px;
+      right: -130px;
+      background: var(--purple);
+    }
+
+    .glow-b {
+      bottom: -180px;
+      left: -130px;
+      background: var(--lime);
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, 100%);
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 20px;
+      animation: enter 0.45s ease both;
+    }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--white-soft);
+      border: 1px solid var(--white-border);
+      border-radius: 28px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+
+    .panel { padding: 30px; }
+
+    .brand-row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 18px;
+      background: var(--lime);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+    }
+
+    h1, h2, p { margin: 0; }
+
+    h1 {
+      font-size: clamp(28px, 4vw, 38px);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    .muted { color: rgba(255, 255, 255, 0.68); }
+
+    .section {
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 24px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .help {
+      font-size: 14px;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.66);
+      margin-bottom: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.78);
+      margin-bottom: 7px;
+      font-weight: 650;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.96);
+      color: #111;
+      font: inherit;
+      padding: 12px 14px;
+    }
+
+    input, select { height: 48px; }
+
+    textarea {
+      min-height: 176px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .button {
+      width: 100%;
+      height: 50px;
+      border: 0;
+      border-radius: 18px;
+      background: var(--lime);
+      color: #111;
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    .button:hover { opacity: 0.92; }
+    .button:active { transform: scale(0.99); }
+    .button:disabled { opacity: 0.42; cursor: not-allowed; }
+
+    .secondary {
+      background: white;
+      color: #111;
+      margin-top: 14px;
+    }
+
+    .message {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--lime);
+    }
+
+    .error {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255, 70, 70, 0.16);
+      border: 1px solid rgba(255, 160, 160, 0.25);
+      color: white;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .passport-card {
+      background: white;
+      color: var(--dark);
+      border: 0;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+      min-height: 560px;
+      animation: pop 0.25s ease both;
+    }
+
+    @keyframes pop {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .passport-top {
+      padding: 30px;
+      background: linear-gradient(135deg, var(--purple), white 55%, var(--lime));
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.84);
+      color: white;
+      padding: 9px 14px;
+      font-weight: 760;
+      font-size: 14px;
+    }
+
+    .passport-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+    }
+
+    .student-name {
+      margin-top: 20px;
+      font-size: clamp(36px, 5vw, 58px);
+      line-height: 0.95;
+      font-weight: 950;
+      letter-spacing: -0.05em;
+    }
+
+    .school-name {
+      margin-top: 10px;
+      color: rgba(0,0,0,0.68);
+      font-weight: 650;
+    }
+
+    .route-icon { font-size: clamp(58px, 8vw, 82px); }
+
+    .passport-body { padding: 28px; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .info-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.09);
+      border-radius: 22px;
+      padding: 15px;
+    }
+
+    .info-icon {
+      flex: 0 0 auto;
+      width: 46px;
+      height: 46px;
+      border-radius: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+      font-size: 20px;
+    }
+
+    .info-label {
+      font-size: 13px;
+      color: rgba(0,0,0,0.50);
+      font-weight: 850;
+      margin-bottom: 3px;
+    }
+
+    .info-value {
+      font-size: 20px;
+      font-weight: 950;
+    }
+
+    .mission {
+      margin-top: 18px;
+      border: 2px dashed rgba(0,0,0,0.18);
+      border-radius: 24px;
+      padding: 18px;
+      background: rgba(0,0,0,0.03);
+    }
+
+    .mission-label {
+      font-size: 13px;
+      color: rgba(0,0,0,0.55);
+      font-weight: 850;
+      margin-bottom: 8px;
+    }
+
+    .mission-text {
+      font-size: 18px;
+      font-weight: 720;
+      line-height: 1.55;
+    }
+
+    .photo-note {
+      margin-top: 18px;
+      border-radius: 24px;
+      padding: 18px;
+      background: var(--dark);
+      color: white;
+    }
+
+    .photo-title {
+      font-size: 18px;
+      font-weight: 850;
+      margin-bottom: 6px;
+    }
+
+    .photo-text {
+      color: rgba(255,255,255,0.76);
+      line-height: 1.45;
+    }
+
+    .empty {
+      min-height: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+    }
+
+    .empty-icon { font-size: 74px; margin-bottom: 18px; }
+
+    .empty h2 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .team-summary {
+      margin-top: 24px;
+      max-height: 290px;
+      overflow: auto;
+      text-align: right;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 22px;
+      padding: 14px;
+    }
+
+    .team-row {
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .team-row:last-child { border-bottom: 0; }
+    .team-strong { font-weight: 850; }
+    .team-members { color: rgba(255,255,255,0.72); }
+
+    @media (max-width: 900px) {
+      .page { padding: 14px; align-items: flex-start; }
+      .app { grid-template-columns: 1fr; }
+      .panel, .passport-top, .passport-body { padding: 22px; }
+      .grid-2, .info-grid { grid-template-columns: 1fr; }
+      .passport-head { flex-direction: column-reverse; }
+      .route-icon { align-self: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="glow-a"></div>
+    <div class="glow-b"></div>
+
+    <section class="app">
+      <div class="card panel">
+        <div class="brand-row">
+          <div class="brand-icon">🔗</div>
+          <div>
+            <h1>TheLink Passport</h1>
+            <p class="muted">הדבקת רשימות, חלוקה לצוותים והפקת דרכונים</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <p class="section-title">1. הדביקו שתי רשימות שמות</p>
+          <p class="help">כל תלמיד בשורה נפרדת. אפשר להעתיק ישירות מ־Excel או Google Sheets. מספרים וכותרות יתעלמו אוטומטית.</p>
+
+          <div class="grid-2" style="margin-bottom: 12px;">
+            <div>
+              <label for="schoolAName">שם בית ספר א׳</label>
+              <input id="schoolAName" value="בית ספר א׳" />
+            </div>
+            <div>
+              <label for="schoolBName">שם בית ספר ב׳</label>
+              <input id="schoolBName" value="בית ספר ב׳" />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label for="listA">רשימת בית ספר א׳</label>
+              <textarea id="listA">תמר רוזן
+מאיה ישראלי
+נועה כהן
+אורי לוי</textarea>
+            </div>
+            <div>
+              <label for="listB">רשימת בית ספר ב׳</label>
+              <textarea id="listB">דפנה שרון
+יונתן דוד
+אדם לוי
+רוני ברק</textarea>
+            </div>
+          </div>
+
+          <button class="button" style="margin-top: 14px;" onclick="buildTeams()">חלקו לצוותים וצרו דרכונים</button>
+          <p id="buildMessage" class="message"></p>
+        </div>
+
+        <form class="section" onsubmit="findPassport(event)">
+          <p class="section-title">2. תלמיד/ה מחפש/ת דרכון</p>
+
+          <div style="margin-bottom: 12px;">
+            <label for="searchName">שם מלא</label>
+            <input id="searchName" placeholder="לדוגמה: נועה כהן" />
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label for="searchSchool">בית ספר</label>
+            <select id="searchSchool">
+              <option value="">בחרו בית ספר</option>
+            </select>
+          </div>
+
+          <div id="notFound" class="error" style="display:none; margin-bottom: 12px;">לא מצאתי תלמיד/ה בשם הזה ברשימת השיבוץ. בדקו את האיות או פנו למנחה.</div>
+
+          <button id="searchButton" class="button" type="submit" disabled>קבלו את הדרכון שלי</button>
+        </form>
+      </div>
+
+      <div id="resultArea" class="card empty">
+        <div>
+          <div class="empty-icon">🪪</div>
+          <h2>הדרכון יופיע כאן</h2>
+          <p class="muted" style="max-width: 420px; line-height: 1.55; margin: 0 auto;">הדביקו שתי רשימות, צרו דרכונים, ואז כל תלמיד יכניס שם ובית ספר ויקבל את הדרכון שלו.</p>
+          <div id="teamSummary"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const ROUTES = [
+      { id: "ofek", name: "מסלול אופק", icon: "🌅", room: "מרחב אופק" },
+      { id: "lab", name: "מסלול מעבדה", icon: "🔬", room: "מרחב מעבדה" },
+      { id: "compass", name: "מסלול מצפן", icon: "🧭", room: "מרחב מצפן" },
+      { id: "spark", name: "מסלול ניצוץ", icon: "✨", room: "מרחב ניצוץ" },
+      { id: "bridge", name: "מסלול גשר", icon: "🌉", room: "מרחב גשר" },
+    ];
+
+    let assignments = [];
+    let teams = [];
+
+    function cleanText(value) {
+      return String(value || "").replace(String.fromCharCode(65279), "").trim();
+    }
+
+    function normalize(value) {
+      let text = cleanText(value).toLowerCase();
+      while (text.indexOf("  ") >= 0) text = text.split("  ").join(" ");
+      return text;
+    }
+
+    function hasLetter(value) {
+      const text = cleanText(value);
+      for (let i = 0; i < text.length; i += 1) {
+        const code = text.charCodeAt(i);
+        if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 1488 && code <= 1514)) return true;
+      }
+      return false;
+    }
+
+    function isNotHeader(value) {
+      const text = normalize(value);
+      const blocked = ["שם", "שם מלא", "name", "מספר", "מס׳", "בית ספר", "בית הספר", "תלמידים", "רשימה"];
+      return blocked.indexOf(text) === -1;
+    }
+
+    function cleanNameLine(line) {
+      const raw = cleanText(line);
+      if (!raw) return "";
+
+      const separators = [String.fromCharCode(9), ",", ";"];
+      let cells = [raw];
+      separators.forEach(function(sep) {
+        if (raw.indexOf(sep) >= 0) cells = raw.split(sep);
+      });
+
+      const textCells = cells.map(cleanText).filter(function(cell) {
+        return hasLetter(cell) && isNotHeader(cell);
+      });
+
+      if (textCells.length === 0) return "";
+      if (textCells.length === 1) return textCells[0];
+
+      const joined = textCells.join(" ");
+      const words = joined.split(" ").map(cleanText).filter(Boolean);
+      if (words.length >= 2) return words.slice(0, 2).join(" ");
+      return joined;
+    }
+
+    function parseNamesList(text, school) {
+      const lines = String(text || "").split(String.fromCharCode(10));
+      const seen = new Set();
+      const students = [];
+
+      lines.forEach(function(line) {
+        const name = cleanNameLine(line);
+        const key = normalize(name) + "|" + normalize(school);
+        if (!name || seen.has(key)) return;
+        seen.add(key);
+        students.push({ name: name, school: school });
+      });
+
+      return students;
+    }
+
+    function shuffleStable(list) {
+      return list
+        .map(function(item, index) {
+          return { item: item, sort: Math.sin(index + cleanText(item.name).length * 999) };
+        })
+        .sort(function(a, b) { return a.sort - b.sort; })
+        .map(function(entry) { return entry.item; });
+    }
+
+    function divideIntoTeams(studentsA, studentsB) {
+      const listA = shuffleStable(studentsA);
+      const listB = shuffleStable(studentsB);
+      const nextTeams = [];
+      const nextAssignments = [];
+      let indexA = 0;
+      let indexB = 0;
+      let teamNumber = 1;
+
+      while (indexA < listA.length || indexB < listB.length) {
+        const route = ROUTES[(teamNumber - 1) % ROUTES.length];
+        const members = [];
+
+        for (let i = 0; i < 2 && indexA < listA.length; i += 1) {
+          members.push(listA[indexA]);
+          indexA += 1;
+        }
+
+        for (let i = 0; i < 2 && indexB < listB.length; i += 1) {
+          members.push(listB[indexB]);
+          indexB += 1;
+        }
+
+        if (members.length > 0) {
+          const team = { route: route, teamNumber: teamNumber, members: members };
+          nextTeams.push(team);
+
+          members.forEach(function(student) {
+            nextAssignments.push({
+              name: student.name,
+              school: student.school,
+              route: route,
+              team: teamNumber,
+              privateRoom: "חדר פרטי " + teamNumber,
+            });
+          });
+
+          teamNumber += 1;
+        }
+      }
+
+      return { teams: nextTeams, assignments: nextAssignments };
+    }
+
+    function buildTeams() {
+      const schoolAName = cleanText(document.getElementById("schoolAName").value) || "בית ספר א׳";
+      const schoolBName = cleanText(document.getElementById("schoolBName").value) || "בית ספר ב׳";
+      const listA = document.getElementById("listA").value;
+      const listB = document.getElementById("listB").value;
+
+      const studentsA = parseNamesList(listA, schoolAName);
+      const studentsB = parseNamesList(listB, schoolBName);
+      const division = divideIntoTeams(studentsA, studentsB);
+
+      assignments = division.assignments;
+      teams = division.teams;
+
+      document.getElementById("buildMessage").textContent = "נוצרו " + assignments.length + " דרכונים וחולקו ל־" + teams.length + " צוותים ללא כפילויות.";
+      document.getElementById("notFound").style.display = "none";
+      updateSchoolSelect([schoolAName, schoolBName]);
+      renderSummary();
+      document.getElementById("searchButton").disabled = assignments.length === 0;
+    }
+
+    function updateSchoolSelect(schools) {
+      const select = document.getElementById("searchSchool");
+      select.innerHTML = '<option value="">בחרו בית ספר</option>';
+      schools.forEach(function(school) {
+        const option = document.createElement("option");
+        option.value = school;
+        option.textContent = school;
+        select.appendChild(option);
+      });
+      if (schools.length) select.value = schools[0];
+    }
+
+    function findPassport(event) {
+      event.preventDefault();
+      const name = document.getElementById("searchName").value;
+      const school = document.getElementById("searchSchool").value;
+      const match = assignments.find(function(item) {
+        return normalize(item.name) === normalize(name) && normalize(item.school) === normalize(school);
+      });
+
+      if (!match) {
+        document.getElementById("notFound").style.display = "block";
+        return;
+      }
+
+      document.getElementById("notFound").style.display = "none";
+      renderPassport(match);
+    }
+
+    function renderPassport(passport) {
+      const area = document.getElementById("resultArea");
+      area.className = "passport-card";
+      area.innerHTML = `
+        <div class="passport-top">
+          <div class="passport-head">
+            <div>
+              <div class="badge">✨ TheLink Mission Passport</div>
+              <h2 class="student-name">${escapeHtml(passport.name)}</h2>
+              <p class="school-name">${escapeHtml(passport.school)}</p>
+            </div>
+            <div class="route-icon">${passport.route.icon}</div>
+          </div>
+        </div>
+        <div class="passport-body">
+          <div class="info-grid">
+            ${infoBox("🧭", "המסלול שלי", passport.route.name)}
+            ${infoBox("👥", "הצוות שלי", "צוות " + passport.team)}
+            ${infoBox("▢", "החדר שלי", passport.privateRoom)}
+            ${infoBox("🏫", "מרחב המסלול שלי", passport.route.room)}
+          </div>
+          <div class="mission">
+            <p class="mission-label">המשימה הראשונה</p>
+            <p class="mission-text">לאחר שהגעתם למרחב של המסלול, היכנסו לחדר הפרטי על פי המספר שקיבלתם בדרכון. אתם מוזמנים להציג את עצמכם: השם כמובן, משהו שאני אוהב/ת לעשות, משהו שאני ממש טוב/ה בו, חוויה מעניינת שעברתי, ואם היה לי מטה קסם — מה הייתי משנה בעולם.</p>
+          </div>
+          <div class="photo-note">
+            <p class="photo-title">צלמו את הדרכון בטלפון 📸</p>
+            <p class="photo-text">שמרו צילום מסך של הדרכון, כדי שתדעו לאיזה מסלול, צוות וחדר פרטי אתם שייכים.</p>
+          </div>
+          <button class="button secondary" onclick="resetSearch()">חיפוש תלמיד נוסף</button>
+        </div>
+      `;
+    }
+
+    function infoBox(icon, label, value) {
+      return `
+        <div class="info-box">
+          <div class="info-icon">${icon}</div>
+          <div>
+            <p class="info-label">${escapeHtml(label)}</p>
+            <p class="info-value">${escapeHtml(value)}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSummary() {
+      const area = document.getElementById("resultArea");
+      area.className = "card empty";
+      area.innerHTML = `
+        <div>
+          <div class="empty-icon">🪪</div>
+          <h2>הדרכון יופיע כאן</h2>
+          <p class="muted" style="max-width: 420px; line-height: 1.55; margin: 0 auto;">הדביקו שתי רשימות, צרו דרכונים, ואז כל תלמיד יכניס שם ובית ספר ויקבל את הדרכון שלו.</p>
+          ${summaryHtml()}
+        </div>
+      `;
+    }
+
+    function summaryHtml() {
+      if (!teams.length) return "";
+      return `
+        <div class="team-summary">
+          <p class="section-title">סיכום חלוקה</p>
+          ${teams.map(function(team) {
+            return `<div class="team-row"><span class="team-strong">${escapeHtml(team.route.name)} · צוות ${team.teamNumber}: </span><span class="team-members">${team.members.map(function(member) { return escapeHtml(member.name); }).join(", ")}</span></div>`;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function resetSearch() {
+      document.getElementById("searchName").value = "";
+      document.getElementById("notFound").style.display = "none";
+      renderSummary();
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
