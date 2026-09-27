@@ -62,6 +62,26 @@
             cursor: pointer; font-size: 1.3rem; opacity: 0.2;
         }
 
+        .lang-switch {
+            position: absolute; top: 8px; left: 5px;
+            display: flex; align-items: center; gap: 4px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 999px; padding: 3px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            z-index: 120;
+        }
+
+        .lang-switch button {
+            border: 0; background: transparent; color: #333;
+            cursor: pointer; border-radius: 999px;
+            padding: 5px 8px; font: 700 0.72rem/1 system-ui, -apple-system, sans-serif;
+        }
+
+        .lang-switch button.active {
+            background: #333; color: #fff;
+        }
+
         #config-panel {
             display: none; position: absolute; background: #fff;
             padding: 15px; border-radius: 10px; z-index: 100;
@@ -78,16 +98,20 @@
 <audio id="endSound"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg"></audio>
 
 <div class="wrapper">
-    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+    <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()" aria-label="הגדרות">⚙️</button>
+    <div class="lang-switch" aria-label="בחירת שפה">
+        <button type="button" id="langHe" onclick="setLanguage('he')">עברית</button>
+        <button type="button" id="langAr" onclick="setLanguage('ar')">العربية</button>
+    </div>
     <div class="countdown-container" id="timerDisplay" onclick="toggleSettings()">
-        <div class="time-segment"><span class="number" id="minutes">00</span><span class="label">דקות</span></div>
-        <div class="time-segment"><span class="number" id="seconds">00</span><span class="label">שניות</span></div>
+        <div class="time-segment"><span class="number" id="minutes">00</span><span class="label" id="minutesLabel">דקות</span></div>
+        <div class="time-segment"><span class="number" id="seconds">00</span><span class="label" id="secondsLabel">שניות</span></div>
     </div>
 
     <div id="config-panel">
-        <label>דקות:</label><input type="number" id="minInput" value="10">
-        <label>התראה (שניות):</label><input type="number" id="warnInput" value="60">
-        <button class="save-btn" onclick="startTimer()">הפעל</button>
+        <label id="minutesConfigLabel">דקות:</label><input type="number" id="minInput" value="10">
+        <label id="warningConfigLabel">התראה (שניות):</label><input type="number" id="warnInput" value="60">
+        <button class="save-btn" id="startButton" onclick="startTimer()">הפעל</button>
     </div>
 </div>
 
@@ -96,6 +120,51 @@
     let warnTime = 60; 
     let timerInterval;
     let warnPlayed = false;
+
+    const COPY = {
+        he: {
+            minutes: 'דקות',
+            seconds: 'שניות',
+            minutesConfig: 'דקות:',
+            warningConfig: 'התראה (שניות):',
+            start: 'הפעל',
+            settings: 'הגדרות',
+            language: 'בחירת שפה'
+        },
+        ar: {
+            minutes: 'دقائق',
+            seconds: 'ثوانٍ',
+            minutesConfig: 'الدقائق:',
+            warningConfig: 'التنبيه (بالثواني):',
+            start: 'ابدأ',
+            settings: 'الإعدادات',
+            language: 'اختيار اللغة'
+        }
+    };
+
+    function initialLanguage() {
+        const requested = new URLSearchParams(window.location.search).get('lang');
+        if (requested === 'he' || requested === 'ar') return requested;
+        const saved = localStorage.getItem('thelink-timer-lang');
+        return saved === 'ar' ? 'ar' : 'he';
+    }
+
+    function setLanguage(lang) {
+        if (!COPY[lang]) lang = 'he';
+        const text = COPY[lang];
+        document.documentElement.lang = lang;
+        document.documentElement.dir = 'rtl';
+        document.getElementById('minutesLabel').textContent = text.minutes;
+        document.getElementById('secondsLabel').textContent = text.seconds;
+        document.getElementById('minutesConfigLabel').textContent = text.minutesConfig;
+        document.getElementById('warningConfigLabel').textContent = text.warningConfig;
+        document.getElementById('startButton').textContent = text.start;
+        document.getElementById('settingsBtn').setAttribute('aria-label', text.settings);
+        document.querySelector('.lang-switch').setAttribute('aria-label', text.language);
+        document.getElementById('langHe').classList.toggle('active', lang === 'he');
+        document.getElementById('langAr').classList.toggle('active', lang === 'ar');
+        localStorage.setItem('thelink-timer-lang', lang);
+    }
 
     function toggleSettings() {
         const panel = document.getElementById('config-panel');
@@ -150,6 +219,7 @@
         timeLeft--;
     }
 
+    setLanguage(initialLanguage());
     timerInterval = setInterval(update, 1000);
     update();
 </script>
