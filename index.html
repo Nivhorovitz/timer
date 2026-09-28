@@ -90,6 +90,8 @@
 
         input { width: 80%; margin: 5px 0; padding: 5px; text-align: center; }
         .save-btn { background: #333; color: white; border: none; padding: 8px; width: 100%; cursor: pointer; border-radius: 4px; }
+        @media(max-width:380px){.wrapper{padding:44px 8px 16px}.time-segment{min-width:75px;padding:12px}.number{font-size:2.8rem}}
+        @media(prefers-reduced-motion:reduce){.flashing .number{animation:none;color:var(--warning-color)}}
     </style>
 </head>
 <body>
@@ -116,10 +118,16 @@
 </div>
 
 <script>
+    const params = new URLSearchParams(location.search); params.delete('lang'); params.sort();
+    const stateKey = 'thelink-timer-state:' + location.pathname + '?' + params.toString();
+    const safeStore = {getItem(k){try{return localStorage.getItem(k)}catch{return null}},setItem(k,v){try{localStorage.setItem(k,v)}catch{}}};
+    let saved = {}; try { saved = JSON.parse(sessionStorage.getItem(stateKey) || '{}'); } catch {}
+    let endAt = Number.isFinite(saved.endAt) ? saved.endAt : Date.now() + 600000;
+    function persist(){try{sessionStorage.setItem(stateKey,JSON.stringify({endAt,warnTime,warnPlayed,mins:document.getElementById('minInput').value,warning:document.getElementById('warnInput').value}))}catch{}}
     let timeLeft = 600; 
-    let warnTime = 60; 
+    let warnTime = Number.isFinite(saved.warnTime) ? saved.warnTime : 60; 
     let timerInterval;
-    let warnPlayed = false;
+    let warnPlayed = saved.warnPlayed === true;
 
     const COPY = {
         he: {
@@ -145,7 +153,7 @@
     function initialLanguage() {
         const requested = new URLSearchParams(window.location.search).get('lang');
         if (requested === 'he' || requested === 'ar') return requested;
-        const saved = localStorage.getItem('thelink-timer-lang');
+        const saved = safeStore.getItem('thelink-timer-lang');
         return saved === 'ar' ? 'ar' : 'he';
     }
 
@@ -163,7 +171,8 @@
         document.querySelector('.lang-switch').setAttribute('aria-label', text.language);
         document.getElementById('langHe').classList.toggle('active', lang === 'he');
         document.getElementById('langAr').classList.toggle('active', lang === 'ar');
-        localStorage.setItem('thelink-timer-lang', lang);
+        safeStore.setItem('thelink-timer-lang', lang);
+        const url = new URL(location.href); url.searchParams.set('lang',lang); history.replaceState(history.state,'',url);
     }
 
     function toggleSettings() {
@@ -173,8 +182,9 @@
 
     function startTimer() {
         const mins = document.getElementById('minInput').value;
-        warnTime = document.getElementById('warnInput').value;
+        warnTime = Number(document.getElementById('warnInput').value);
         timeLeft = mins * 60;
+        endAt = Date.now() + timeLeft * 1000;
         warnPlayed = false;
         document.getElementById('timerDisplay').classList.remove('flashing');
         clearInterval(timerInterval);
@@ -184,6 +194,8 @@
     }
 
     function update() {
+        timeLeft = Math.max(0, Math.ceil((endAt-Date.now())/1000));
+        persist();
         if (timeLeft <= 0) {
             document.getElementById("minutes").innerText = "00";
             document.getElementById("seconds").innerText = "00";
@@ -216,9 +228,11 @@
         const s = timeLeft % 60;
         document.getElementById("minutes").innerText = String(m).padStart(2, '0');
         document.getElementById("seconds").innerText = String(s).padStart(2, '0');
-        timeLeft--;
+        persist();
     }
 
+    if(saved.mins !== undefined) document.getElementById('minInput').value = saved.mins;
+    if(saved.warning !== undefined) document.getElementById('warnInput').value = saved.warning;
     setLanguage(initialLanguage());
     timerInterval = setInterval(update, 1000);
     update();
