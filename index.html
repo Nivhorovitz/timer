@@ -123,11 +123,12 @@
     const safeStore = {getItem(k){try{return localStorage.getItem(k)}catch{return null}},setItem(k,v){try{localStorage.setItem(k,v)}catch{}}};
     let saved = {}; try { saved = JSON.parse(sessionStorage.getItem(stateKey) || '{}'); } catch {}
     let endAt = Number.isFinite(saved.endAt) ? saved.endAt : Date.now() + 600000;
-    function persist(){try{sessionStorage.setItem(stateKey,JSON.stringify({endAt,warnTime,warnPlayed,mins:document.getElementById('minInput').value,warning:document.getElementById('warnInput').value}))}catch{}}
+    function persist(){try{sessionStorage.setItem(stateKey,JSON.stringify({endAt,warnTime,warnPlayed,finishedPlayed,mins:document.getElementById('minInput').value,warning:document.getElementById('warnInput').value}))}catch{}}
     let timeLeft = 600; 
     let warnTime = Number.isFinite(saved.warnTime) ? saved.warnTime : 60; 
     let timerInterval;
     let warnPlayed = saved.warnPlayed === true;
+    let finishedPlayed = saved.finishedPlayed === true;
 
     const COPY = {
         he: {
@@ -186,6 +187,7 @@
         timeLeft = mins * 60;
         endAt = Date.now() + timeLeft * 1000;
         warnPlayed = false;
+        finishedPlayed = false;
         document.getElementById('timerDisplay').classList.remove('flashing');
         clearInterval(timerInterval);
         timerInterval = setInterval(update, 1000);
@@ -200,17 +202,17 @@
             document.getElementById("minutes").innerText = "00";
             document.getElementById("seconds").innerText = "00";
             
-            // הפעלת הבהוב סיום
-            const display = document.getElementById('timerDisplay');
-            display.classList.add('flashing');
-            document.getElementById("endSound").play().catch(()=>{});
-            
             clearInterval(timerInterval);
-
-            // כיבוי ההבהוב אחרי 30 שניות
-            setTimeout(() => {
-                display.classList.remove('flashing');
-            }, 30000); 
+            // The completion event can be evaluated again after refresh or manual update.
+            // Announce it once per countdown; persist this guard with the deadline.
+            if (!finishedPlayed) {
+                finishedPlayed = true;
+                const display = document.getElementById('timerDisplay');
+                display.classList.add('flashing');
+                document.getElementById("endSound").play().catch(()=>{});
+                setTimeout(() => display.classList.remove('flashing'), 30000);
+                persist();
+            } 
             
             return;
         }
