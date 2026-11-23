@@ -1,0 +1,61 @@
+name: Ruflo pilot | Sparkco timer
+
+on:
+  push:
+    branches:
+      - experiment/ruflo-pilot-2026-11-23
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  timer-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record Node runtime
+        run: node --version
+      - name: Verify the regression existed on main (expected failing baseline)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show origin/main:index.html > /tmp/ruflo-timer-baseline.html
+          set +e
+          TIMER_HTML=/tmp/ruflo-timer-baseline.html node --test tests/timer.test.mjs > /tmp/ruflo-baseline-tests.log 2>&1
+          baseline_status=$?
+          set -e
+          tail -n 35 /tmp/ruflo-baseline-tests.log
+          if [[ "$baseline_status" -eq 0 ]]; then
+            echo "::error::Regression test unexpectedly passed on main"
+            exit 1
+          fi
+          echo "PASS: confirmed the original timer fails the new regression tests"
+      - name: Run fixed timer regression tests
+        run: node --test tests/timer.test.mjs
+
+  ruflo-runtime-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Isolated zero-secret Ruflo initialization
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          mkdir -p "$RUNNER_TEMP/ruflo-sandbox"
+          cd "$RUNNER_TEMP/ruflo-sandbox"
+          printf '{"name":"sparkco-ruflo-throwaway","private":true,"version":"0.0.0"}\n' > package.json
+          echo "Ruflo version:"
+          npx --yes ruflo@latest --version
+          echo "Node doctor:"
+          npx --yes ruflo@latest doctor --json --component node
+          echo "Initialize empty isolated project:"
+          npx --yes ruflo@latest init
+          test -f CLAUDE.md
+          test -d .claude
+          echo "PASS: Ruflo CLI initialized in isolated workspace"
